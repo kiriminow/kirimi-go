@@ -5,7 +5,7 @@ Go SDK untuk Kirimi Console API - Platform WhatsApp messaging dengan fitur OTP d
 ## Instalasi
 
 ```bash
-go get github.com/yolk/kirimi-go
+go get github.com/kiriminow/kirimi-go
 ```
 
 ## Quick Start
