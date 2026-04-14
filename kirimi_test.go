@@ -48,7 +48,7 @@ func TestHealthCheck(t *testing.T) {
 	// Test successful health check
 	successResponse := Response{
 		Success: true,
-		Data:    map[string]interface{}{},
+		Data:    json.RawMessage(`{}`),
 		Message: "Kirimi API v1",
 	}
 
@@ -70,11 +70,7 @@ func TestGenerateOTP(t *testing.T) {
 	// Test successful OTP generation
 	successResponse := Response{
 		Success: true,
-		Data: map[string]interface{}{
-			"phone":      "628123456789",
-			"message":    "OTP berhasil dikirim",
-			"expires_in": "5 menit",
-		},
+		Data:    json.RawMessage(`{"phone":"628123456789","message":"OTP berhasil dikirim","expires_in":"5 menit"}`),
 		Message: "OTP berhasil digenerate dan dikirim",
 	}
 
@@ -106,11 +102,7 @@ func TestValidateOTP(t *testing.T) {
 	// Test successful OTP validation
 	successResponse := Response{
 		Success: true,
-		Data: map[string]interface{}{
-			"phone":       "628123456789",
-			"verified":    true,
-			"verified_at": "2024-01-15T10:30:00.000Z",
-		},
+		Data:    json.RawMessage(`{"phone":"628123456789","verified":true,"verified_at":"2024-01-15T10:30:00.000Z"}`),
 		Message: "OTP berhasil divalidasi",
 	}
 
@@ -143,11 +135,7 @@ func TestSendMessage(t *testing.T) {
 	// Test successful message sending
 	successResponse := Response{
 		Success: true,
-		Data: map[string]interface{}{
-			"message_length": 25,
-			"media_url":      "https://example.com/image.jpg",
-			"has_media":      true,
-		},
+		Data:    json.RawMessage(`{"message_length":25,"media_url":"https://example.com/image.jpg","has_media":true}`),
 		Message: "Berhasil mengirim pesan dengan media",
 	}
 
@@ -158,7 +146,7 @@ func TestSendMessage(t *testing.T) {
 	req := SendMessageRequest{
 		UserCode: "USER123",
 		DeviceID: "DEVICE456",
-		Receiver: "628987654321",
+		Phone:    "628987654321",
 		Message:  "Hello from test!",
 		Secret:   "test-secret",
 		MediaURL: "https://example.com/image.jpg",
@@ -182,7 +170,7 @@ func TestSendMessageTooLong(t *testing.T) {
 	req := SendMessageRequest{
 		UserCode: "USER123",
 		DeviceID: "DEVICE456",
-		Receiver: "628987654321",
+		Phone:    "628987654321",
 		Message:  string(make([]byte, MaxMessageLength+1)), // Message too long
 		Secret:   "test-secret",
 	}
@@ -198,7 +186,7 @@ func TestAPIError(t *testing.T) {
 	// Test API error response
 	errorResponse := Response{
 		Success: false,
-		Data:    map[string]interface{}{},
+		Data:    json.RawMessage(`{}`),
 		Message: "Parameter tidak boleh kosong",
 	}
 
@@ -278,9 +266,6 @@ func TestHelperFunctions(t *testing.T) {
 func TestConstants(t *testing.T) {
 	if DefaultBaseURL != "https://api.kirimi.id" {
 		t.Errorf("Expected DefaultBaseURL to be 'https://api.kirimi.id', got %s", DefaultBaseURL)
-	}
-	if APIVersion != "v1" {
-		t.Errorf("Expected APIVersion to be 'v1', got %s", APIVersion)
 	}
 	if ContentType != "application/json" {
 		t.Errorf("Expected ContentType to be 'application/json', got %s", ContentType)
