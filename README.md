@@ -17,7 +17,7 @@ import (
     "fmt"
     "log"
 
-    kirimi "github.com/yolk/kirimi-go"
+    kirimi "github.com/kiriminow/kirimi-go"
 )
 
 func main() {
