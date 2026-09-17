@@ -32,6 +32,14 @@ const (
 	PackagePro3   = 11
 )
 
+// OTP v2 delivery methods
+const (
+	OtpMethodWhatsApp = "whatsapp"
+	OtpMethodWaba     = "waba"
+	OtpMethodDevice   = "device"
+	OtpMethodWabaUser = "waba_user"
+)
+
 // Client represents the Kirimi API client
 type Client struct {
 	BaseURL    string
@@ -72,13 +80,16 @@ type Response struct {
 
 // GenerateOTPRequest represents the request for generating OTP
 type GenerateOTPRequest struct {
-	UserCode         string `json:"user_code"`
-	DeviceID         string `json:"device_id"`
-	Phone            string `json:"phone"`
-	Secret           string `json:"secret"`
-	OtpLength        int    `json:"otp_length,omitempty"`
-	OtpType          string `json:"otp_type,omitempty"`
-	CustomOtpMessage string `json:"customOtpMessage,omitempty"`
+	UserCode           string `json:"user_code"`
+	DeviceID           string `json:"device_id"`
+	Phone              string `json:"phone"`
+	Secret             string `json:"secret"`
+	OtpLength          int    `json:"otp_length,omitempty"`
+	OtpType            string `json:"otp_type,omitempty"`
+	CustomOtpMessage   string `json:"customOtpMessage,omitempty"`
+	CustomOtpText      string `json:"customOtpText,omitempty"`
+	EnableTypingEffect *bool  `json:"enableTypingEffect,omitempty"`
+	TypingSpeedMs      int    `json:"typingSpeedMs,omitempty"`
 }
 
 // GenerateOTPResponse represents the response data for OTP generation
@@ -106,12 +117,16 @@ type ValidateOTPResponse struct {
 
 // SendMessageRequest represents the request for sending a message
 type SendMessageRequest struct {
-	UserCode string `json:"user_code"`
-	DeviceID string `json:"device_id"`
-	Phone    string `json:"phone"`
-	Message  string `json:"message"`
-	Secret   string `json:"secret"`
-	MediaURL string `json:"media_url,omitempty"`
+	UserCode           string `json:"user_code"`
+	DeviceID           string `json:"device_id"`
+	Receiver           string `json:"receiver"`
+	Message            string `json:"message"`
+	Secret             string `json:"secret"`
+	MediaURL           string `json:"media_url,omitempty"`
+	FileName           string `json:"fileName,omitempty"`
+	EnableTypingEffect *bool  `json:"enableTypingEffect,omitempty"`
+	TypingSpeedMs      int    `json:"typingSpeedMs,omitempty"`
+	QuotedMessageID    string `json:"quotedMessageId,omitempty"`
 }
 
 // SendMessageResponse represents the response data for sending message
@@ -123,23 +138,90 @@ type SendMessageResponse struct {
 
 // SendMessageFileRequest represents the request for sending a file via multipart/form-data
 type SendMessageFileRequest struct {
-	UserCode string
-	DeviceID string
-	Phone    string
-	Secret   string
-	File     io.Reader
-	Filename string
-	Message  string
-	FileName string
+	UserCode        string
+	DeviceID        string
+	Receiver        string
+	Secret          string
+	File            io.Reader
+	Filename        string
+	Message         string
+	Caption         string
+	FileName        string
+	QuotedMessageID string
 }
 
 // SendWabaMessageRequest represents the request for sending a WABA message
 type SendWabaMessageRequest struct {
+	UserCode     string              `json:"user_code"`
+	Secret       string              `json:"secret"`
+	WabaID       string              `json:"waba_id"`
+	To           string              `json:"to"`
+	TemplateName string              `json:"template_name"`
+	Variables    []string            `json:"variables,omitempty"`
+	Header       *WabaTemplateHeader `json:"header,omitempty"`
+	Buttons      []interface{}       `json:"buttons,omitempty"`
+}
+
+// WabaTemplateHeader represents a WABA template header component
+type WabaTemplateHeader struct {
+	Type     string `json:"type"`
+	Link     string `json:"link,omitempty"`
+	ID       string `json:"id,omitempty"`
+	Filename string `json:"filename,omitempty"`
+	Text     string `json:"text,omitempty"`
+}
+
+// WabaReplyMessage represents a free-form WABA reply. Only the fields relevant
+// to Type are serialized; the rest stay empty thanks to omitempty.
+type WabaReplyMessage struct {
+	Type        string                 `json:"type"`
+	Text        string                 `json:"text,omitempty"`
+	MediaURL    string                 `json:"media_url,omitempty"`
+	Caption     string                 `json:"caption,omitempty"`
+	Filename    string                 `json:"filename,omitempty"`
+	Interactive map[string]interface{} `json:"interactive,omitempty"`
+}
+
+// WabaReplyRequest represents the request for /v1/waba/messages/reply
+type WabaReplyRequest struct {
+	UserCode string           `json:"user_code"`
+	Secret   string           `json:"secret"`
+	WabaID   string           `json:"waba_id"`
+	To       string           `json:"to"`
+	Message  WabaReplyMessage `json:"message"`
+}
+
+// WabaConversationsRequest represents the request for /v1/waba/conversations
+type WabaConversationsRequest struct {
 	UserCode string `json:"user_code"`
 	Secret   string `json:"secret"`
-	DeviceID string `json:"device_id"`
-	Phone    string `json:"phone"`
-	Message  string `json:"message"`
+	Limit    int    `json:"limit,omitempty"`
+	Page     int    `json:"page,omitempty"`
+}
+
+// WabaTemplateSyncRequest represents the request for /v1/waba/templates/sync
+type WabaTemplateSyncRequest struct {
+	UserCode string `json:"user_code"`
+	Secret   string `json:"secret"`
+	WabaID   string `json:"waba_id"`
+}
+
+// WabaSendOtpRequest represents the request for /v1/waba/send-otp
+type WabaSendOtpRequest struct {
+	UserCode     string `json:"user_code"`
+	Secret       string `json:"secret"`
+	WabaID       string `json:"waba_id"`
+	To           string `json:"to"`
+	TemplateName string `json:"template_name"`
+}
+
+// WabaVerifyOtpRequest represents the request for /v1/waba/verify-otp
+type WabaVerifyOtpRequest struct {
+	UserCode string `json:"user_code"`
+	Secret   string `json:"secret"`
+	WabaID   string `json:"waba_id"`
+	To       string `json:"to"`
+	OtpCode  string `json:"otp_code"`
 }
 
 // DeviceStatusRequest is used for device-status and device-status-enhanced
@@ -149,13 +231,51 @@ type DeviceStatusRequest struct {
 	DeviceID string `json:"device_id"`
 }
 
+// CreateDeviceRequest represents the request for /v1/create-device
+type CreateDeviceRequest struct {
+	UserCode    string      `json:"user_code"`
+	Secret      string      `json:"secret"`
+	PackageID   interface{} `json:"package_id,omitempty"`
+	VoucherCode string      `json:"voucher_code,omitempty"`
+}
+
+// ConnectDeviceRequest represents the request for /v1/connect-device
+type ConnectDeviceRequest struct {
+	UserCode string `json:"user_code"`
+	Secret   string `json:"secret"`
+	DeviceID string `json:"device_id"`
+}
+
+// RenewDeviceRequest represents the request for /v1/renew-device
+type RenewDeviceRequest struct {
+	UserCode    string      `json:"user_code"`
+	Secret      string      `json:"secret"`
+	DeviceID    string      `json:"device_id"`
+	PackageID   interface{} `json:"package_id,omitempty"`
+	VoucherCode string      `json:"voucher_code,omitempty"`
+}
+
 // SaveContactRequest represents the request for saving a contact
 type SaveContactRequest struct {
 	UserCode string `json:"user_code"`
 	Secret   string `json:"secret"`
-	Phone    string `json:"phone"`
-	Name     string `json:"name,omitempty"`
-	Email    string `json:"email,omitempty"`
+	Nama     string `json:"nama"`
+	Nomor    string `json:"nomor"`
+	DeviceID string `json:"device_id,omitempty"`
+}
+
+// BulkContact represents a single contact for a bulk save
+type BulkContact struct {
+	Nama  string `json:"nama"`
+	Nomor string `json:"nomor"`
+}
+
+// SaveContactsBulkRequest represents the request for /v1/save-contacts-bulk
+type SaveContactsBulkRequest struct {
+	UserCode string        `json:"user_code"`
+	Secret   string        `json:"secret"`
+	Contacts []BulkContact `json:"contacts"`
+	DeviceID string        `json:"device_id,omitempty"`
 }
 
 // SendOtpV2Request represents the request for /v2/otp/send
@@ -163,10 +283,11 @@ type SendOtpV2Request struct {
 	UserCode      string `json:"user_code"`
 	Secret        string `json:"secret"`
 	Phone         string `json:"phone"`
-	DeviceID      string `json:"device_id"`
 	Method        string `json:"method,omitempty"`
 	AppName       string `json:"app_name,omitempty"`
-	TemplateCode  string `json:"template_code,omitempty"`
+	DeviceID      string `json:"device_id,omitempty"`
+	WabaID        string `json:"waba_id,omitempty"`
+	TemplateName  string `json:"template_name,omitempty"`
 	CustomMessage string `json:"custom_message,omitempty"`
 }
 
@@ -178,21 +299,73 @@ type VerifyOtpV2Request struct {
 	OtpCode  string `json:"otp_code"`
 }
 
+// OtpReverseCreateRequest represents the request for /v2/otp-reverse/create
+type OtpReverseCreateRequest struct {
+	UserCode       string `json:"user_code"`
+	Secret         string `json:"secret"`
+	Phone          string `json:"phone"`
+	DeviceID       string `json:"device_id"`
+	AppName        string `json:"app_name,omitempty"`
+	CallbackURL    string `json:"callback_url,omitempty"`
+	CustomMessage  string `json:"custom_message,omitempty"`
+	SuccessMessage string `json:"success_message,omitempty"`
+	FailureMessage string `json:"failure_message,omitempty"`
+}
+
+// OtpReverseStatusRequest represents the request for /v2/otp-reverse/status
+type OtpReverseStatusRequest struct {
+	UserCode string `json:"user_code"`
+	Secret   string `json:"secret"`
+	Token    string `json:"token"`
+}
+
 // BroadcastMessageRequest represents the request for broadcast-message
 type BroadcastMessageRequest struct {
-	UserCode string  `json:"user_code"`
-	Secret   string  `json:"secret"`
-	DeviceID string  `json:"device_id"`
-	Phones   string  `json:"phones"`
-	Message  string  `json:"message"`
-	Delay    float64 `json:"delay,omitempty"`
+	UserCode           string   `json:"user_code"`
+	Secret             string   `json:"secret"`
+	DeviceID           string   `json:"device_id"`
+	Label              string   `json:"label"`
+	Numbers            []string `json:"numbers"`
+	Message            string   `json:"message"`
+	Delay              float64  `json:"delay,omitempty"`
+	DelayMin           float64  `json:"delayMin,omitempty"`
+	DelayMax           float64  `json:"delayMax,omitempty"`
+	MediaURL           string   `json:"media_url,omitempty"`
+	FileName           string   `json:"fileName,omitempty"`
+	StartedAt          string   `json:"started_at,omitempty"`
+	EnableTypingEffect *bool    `json:"enableTypingEffect,omitempty"`
+	TypingSpeedMs      int      `json:"typingSpeedMs,omitempty"`
+}
+
+// CreateDepositRequest represents the request for /v1/create-deposit
+type CreateDepositRequest struct {
+	UserCode string `json:"user_code"`
+	Secret   string `json:"secret"`
+	Nominal  int    `json:"nominal"`
+}
+
+// DepositRefRequest represents the request for deposit-status and cancel-deposit
+type DepositRefRequest struct {
+	UserCode string `json:"user_code"`
+	Secret   string `json:"secret"`
+	Ref      string `json:"ref"`
 }
 
 // ListDepositsRequest represents the request for list-deposits
 type ListDepositsRequest struct {
 	UserCode string `json:"user_code"`
 	Secret   string `json:"secret"`
+	Page     int    `json:"page,omitempty"`
+	Limit    int    `json:"limit,omitempty"`
 	Status   string `json:"status,omitempty"`
+}
+
+// ListDevicesRequest represents the request for /v1/list-devices
+type ListDevicesRequest struct {
+	UserCode string `json:"user_code"`
+	Secret   string `json:"secret"`
+	Page     int    `json:"page,omitempty"`
+	Limit    int    `json:"limit,omitempty"`
 }
 
 // HealthCheckResponse represents the health check response
@@ -353,12 +526,18 @@ func (c *Client) SendMessageFile(req SendMessageFileRequest) (*Response, error) 
 	_ = w.WriteField("user_code", req.UserCode)
 	_ = w.WriteField("secret", req.Secret)
 	_ = w.WriteField("device_id", req.DeviceID)
-	_ = w.WriteField("phone", req.Phone)
+	_ = w.WriteField("receiver", req.Receiver)
 	if req.Message != "" {
 		_ = w.WriteField("message", req.Message)
 	}
+	if req.Caption != "" {
+		_ = w.WriteField("caption", req.Caption)
+	}
 	if req.FileName != "" {
 		_ = w.WriteField("fileName", req.FileName)
+	}
+	if req.QuotedMessageID != "" {
+		_ = w.WriteField("quotedMessageId", req.QuotedMessageID)
 	}
 
 	filename := req.Filename
@@ -409,6 +588,11 @@ func (c *Client) SendMessageFile(req SendMessageFileRequest) (*Response, error) 
 	return &apiResp, nil
 }
 
+// BroadcastMessage sends a message to multiple recipients (numbers as a JSON array)
+func (c *Client) BroadcastMessage(req BroadcastMessageRequest) (*Response, error) {
+	return c.makeRequest("POST", "/v1/broadcast-message", req)
+}
+
 // --- WABA ---
 
 // SendWabaMessage sends a message via WhatsApp Business API (Meta Cloud API)
@@ -416,11 +600,103 @@ func (c *Client) SendWabaMessage(req SendWabaMessageRequest) (*Response, error) 
 	return c.makeRequest("POST", "/v1/waba/send-message", req)
 }
 
+// WabaReply sends a free-form reply to a WABA conversation
+func (c *Client) WabaReply(userCode, secret, wabaID, to string, message WabaReplyMessage) (*Response, error) {
+	return c.makeRequest("POST", "/v1/waba/messages/reply", WabaReplyRequest{
+		UserCode: userCode,
+		Secret:   secret,
+		WabaID:   wabaID,
+		To:       to,
+		Message:  message,
+	})
+}
+
+// WabaConversations lists WABA conversations still inside the 24h window
+func (c *Client) WabaConversations(userCode, secret string, limit, page int) (*Response, error) {
+	return c.makeRequest("POST", "/v1/waba/conversations", WabaConversationsRequest{
+		UserCode: userCode,
+		Secret:   secret,
+		Limit:    limit,
+		Page:     page,
+	})
+}
+
+// WabaTemplatesSync refreshes template status from Meta for one WABA
+func (c *Client) WabaTemplatesSync(userCode, secret, wabaID string) (*Response, error) {
+	return c.makeRequest("POST", "/v1/waba/templates/sync", WabaTemplateSyncRequest{
+		UserCode: userCode,
+		Secret:   secret,
+		WabaID:   wabaID,
+	})
+}
+
+// WabaSendOtp sends an OTP through a WABA + AUTHENTICATION template
+func (c *Client) WabaSendOtp(userCode, secret, wabaID, to, templateName string) (*Response, error) {
+	return c.makeRequest("POST", "/v1/waba/send-otp", WabaSendOtpRequest{
+		UserCode:     userCode,
+		Secret:       secret,
+		WabaID:       wabaID,
+		To:           to,
+		TemplateName: templateName,
+	})
+}
+
+// WabaVerifyOtp verifies an OTP previously sent through WabaSendOtp
+func (c *Client) WabaVerifyOtp(userCode, secret, wabaID, to, otpCode string) (*Response, error) {
+	return c.makeRequest("POST", "/v1/waba/verify-otp", WabaVerifyOtpRequest{
+		UserCode: userCode,
+		Secret:   secret,
+		WabaID:   wabaID,
+		To:       to,
+		OtpCode:  otpCode,
+	})
+}
+
 // --- Devices ---
 
 // ListDevices returns all registered devices for the account
 func (c *Client) ListDevices(userCode, secret string) (*Response, error) {
 	return c.makeRequest("POST", "/v1/list-devices", c.authBody(userCode, secret))
+}
+
+// ListDevicesPaged returns a page of registered devices for the account
+func (c *Client) ListDevicesPaged(userCode, secret string, page, limit int) (*Response, error) {
+	return c.makeRequest("POST", "/v1/list-devices", ListDevicesRequest{
+		UserCode: userCode,
+		Secret:   secret,
+		Page:     page,
+		Limit:    limit,
+	})
+}
+
+// CreateDevice creates a new device
+func (c *Client) CreateDevice(userCode, secret string, packageID interface{}, voucherCode string) (*Response, error) {
+	return c.makeRequest("POST", "/v1/create-device", CreateDeviceRequest{
+		UserCode:    userCode,
+		Secret:      secret,
+		PackageID:   packageID,
+		VoucherCode: voucherCode,
+	})
+}
+
+// ConnectDevice connects a device and returns its QR/session state
+func (c *Client) ConnectDevice(userCode, secret, deviceID string) (*Response, error) {
+	return c.makeRequest("POST", "/v1/connect-device", ConnectDeviceRequest{
+		UserCode: userCode,
+		Secret:   secret,
+		DeviceID: deviceID,
+	})
+}
+
+// RenewDevice renews a device subscription
+func (c *Client) RenewDevice(userCode, secret, deviceID string, packageID interface{}, voucherCode string) (*Response, error) {
+	return c.makeRequest("POST", "/v1/renew-device", RenewDeviceRequest{
+		UserCode:    userCode,
+		Secret:      secret,
+		DeviceID:    deviceID,
+		PackageID:   packageID,
+		VoucherCode: voucherCode,
+	})
 }
 
 // DeviceStatus checks the connection status of a device
@@ -455,6 +731,16 @@ func (c *Client) SaveContact(req SaveContactRequest) (*Response, error) {
 	return c.makeRequest("POST", "/v1/save-contact", req)
 }
 
+// SaveContactsBulk saves up to 1000 contacts in one request
+func (c *Client) SaveContactsBulk(userCode, secret string, contacts []BulkContact, deviceID string) (*Response, error) {
+	return c.makeRequest("POST", "/v1/save-contacts-bulk", SaveContactsBulkRequest{
+		UserCode: userCode,
+		Secret:   secret,
+		Contacts: contacts,
+		DeviceID: deviceID,
+	})
+}
+
 // --- OTP v1 ---
 
 // GenerateOTP generates an OTP and sends it to the specified phone number
@@ -487,7 +773,7 @@ func (c *Client) ValidateOTP(req ValidateOTPRequest) (*ValidateOTPResponse, erro
 
 // --- OTP v2 ---
 
-// SendOtpV2 sends an OTP via WABA template or device (v2 endpoint)
+// SendOtpV2 sends an OTP via the Kirimi provider, your own device, or your own WABA
 func (c *Client) SendOtpV2(req SendOtpV2Request) (*Response, error) {
 	return c.makeRequest("POST", "/v2/otp/send", req)
 }
@@ -497,20 +783,69 @@ func (c *Client) VerifyOtpV2(req VerifyOtpV2Request) (*Response, error) {
 	return c.makeRequest("POST", "/v2/otp/verify", req)
 }
 
-// --- Broadcast ---
+// --- OTP Reverse ---
 
-// BroadcastMessage sends a message to multiple recipients (phones as comma-separated string)
-func (c *Client) BroadcastMessage(req BroadcastMessageRequest) (*Response, error) {
-	return c.makeRequest("POST", "/v1/broadcast-message", req)
+// OtpReverseCreate creates a reverse OTP token and the message the customer must send back
+func (c *Client) OtpReverseCreate(userCode, secret string, req OtpReverseCreateRequest) (*Response, error) {
+	req.UserCode = userCode
+	req.Secret = secret
+	return c.makeRequest("POST", "/v2/otp-reverse/create", req)
+}
+
+// OtpReverseStatus checks the status of a reverse OTP token
+func (c *Client) OtpReverseStatus(userCode, secret, token string) (*Response, error) {
+	return c.makeRequest("POST", "/v2/otp-reverse/status", OtpReverseStatusRequest{
+		UserCode: userCode,
+		Secret:   secret,
+		Token:    token,
+	})
 }
 
 // --- Deposits & Packages ---
+
+// CreateDeposit creates a deposit payment link. Nominal minimum is 100.
+func (c *Client) CreateDeposit(userCode, secret string, nominal int) (*Response, error) {
+	return c.makeRequest("POST", "/v1/create-deposit", CreateDepositRequest{
+		UserCode: userCode,
+		Secret:   secret,
+		Nominal:  nominal,
+	})
+}
+
+// DepositStatus checks a deposit's status by reference
+func (c *Client) DepositStatus(userCode, secret, ref string) (*Response, error) {
+	return c.makeRequest("POST", "/v1/deposit-status", DepositRefRequest{
+		UserCode: userCode,
+		Secret:   secret,
+		Ref:      ref,
+	})
+}
+
+// CancelDeposit cancels an unpaid deposit
+func (c *Client) CancelDeposit(userCode, secret, ref string) (*Response, error) {
+	return c.makeRequest("POST", "/v1/cancel-deposit", DepositRefRequest{
+		UserCode: userCode,
+		Secret:   secret,
+		Ref:      ref,
+	})
+}
 
 // ListDeposits returns deposit list, optionally filtered by status ("", "paid", "unpaid", "expired")
 func (c *Client) ListDeposits(userCode, secret, status string) (*Response, error) {
 	return c.makeRequest("POST", "/v1/list-deposits", ListDepositsRequest{
 		UserCode: userCode,
 		Secret:   secret,
+		Status:   status,
+	})
+}
+
+// ListDepositsPaged returns a page of deposits, optionally filtered by status
+func (c *Client) ListDepositsPaged(userCode, secret string, page, limit int, status string) (*Response, error) {
+	return c.makeRequest("POST", "/v1/list-deposits", ListDepositsRequest{
+		UserCode: userCode,
+		Secret:   secret,
+		Page:     page,
+		Limit:    limit,
 		Status:   status,
 	})
 }

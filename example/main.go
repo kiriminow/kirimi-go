@@ -64,7 +64,7 @@ func main() {
 	msgReq := kirimi.SendMessageRequest{
 		UserCode: "USER123",
 		DeviceID: "DEVICE456",
-		Phone:    "628987654321",
+		Receiver: "628987654321",
 		Message:  "Hello from Kirimi Go SDK!",
 		Secret:   "your-secret-key",
 	}
@@ -81,7 +81,7 @@ func main() {
 	msgWithMediaReq := kirimi.SendMessageRequest{
 		UserCode: "USER123",
 		DeviceID: "DEVICE456",
-		Phone:    "628987654321",
+		Receiver: "628987654321",
 		Message:  "Check out this image!",
 		Secret:   "your-secret-key",
 		MediaURL: "https://example.com/image.jpg",
